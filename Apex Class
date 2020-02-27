@@ -1,0 +1,105 @@
+public class TakeHelp {
+    
+static    List<Task> tsk = new List<task>();
+static    List<Account> acc = new List<Account>();
+static    List<Contact> con = new List<Contact>();
+static    List<Opportunity> opp = new List<Opportunity>();
+    
+    public static void setLead(lead l){
+        if(l.Status == 'Open - Not Contacted'){
+            l.Rating = '--None--';
+        }
+        if(l.Status == 'Closed - Not Converted'){
+            l.Rating = 'cold';
+            if(l.Reason__c == Null)
+            {
+                l.addError('Reason is mandatory');
+            }
+        }
+        
+        if(l.Status == 'Closed - Converted'){
+            l.Rating = 'hot';
+            
+        }
+        
+        if(l.Status == 'Working - Contacted'){
+            l.Rating = 'Warm';
+        }
+    }
+    public static void createLinks(lead l){
+        if(l.Status== 'open - Not Contacted')
+        {
+        	task t = new task();
+        	t.Subject = 'Call';
+        	t.WhoId = l.id;
+        	t.ActivityDate = date.today()+7;
+        	tsk.add(t);
+        }
+        if(l.status == 'Closed - Converted')
+       	{
+            Account a = new Account();
+            a.name = l.Company;
+            acc.add(a);
+        
+            Contact c = new Contact();
+        	c.FirstName = l.FirstName;
+        	c.LastName = l.LastName;
+            con.add(c);
+        
+        	Opportunity o = new Opportunity();
+        	o.Name = a.Name+'opp';
+        	o.StageName = 'Prospecting';
+        	o.CloseDate = date.today().addDays(2);
+            opp.add(o);
+       
+            task t = new task();
+        	t.Subject = 'Call';
+        	t.ActivityDate = date.today()+7;
+        	tsk.add(t); 
+            
+            if(l.Email != Null){
+        		Messaging.SingleEmailMessage message = new Messaging.SingleEmailMessage();
+        		message.toAddresses = new String[] { l.Email };
+        		message.subject = 'Lead Converted '+l.FirstName+l.LastName;
+        		message.plainTextBody = a.Name+ ' '+t.Subject+' '+o.Name;
+        		Messaging.sendEmail(new Messaging.Email[] { message });
+        	}
+        }
+    }
+    public static void ifUpdate(Lead l, List<lead> o)
+    {
+        for(lead l1 : o)
+        {
+            if(l.id==l1.id && l.Status != l1.status)
+            {
+                TakeHelp.CreateLinks(l);
+            }
+        }
+    }
+    
+    public static void InsertAll()
+    {
+        if(!tsk.isEmpty())
+        {
+            insert tsk;
+            tsk.clear();
+        }
+        
+        if(!acc.isEmpty())
+        {
+            insert acc;
+            acc.clear();
+        }
+		if(!con.isEmpty())
+        {
+            insert con;
+            con.clear();
+        }
+        
+        if(!opp.isEmpty())
+        {
+            insert opp;
+            opp.clear();
+        }
+    }
+}
