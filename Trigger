@@ -1,0 +1,35 @@
+trigger Trigrrr on Lead (before insert, before update, before delete, after insert, after update)
+{
+    List<Lead> o =trigger.old;
+    
+    for(lead l: Trigger.new)
+    {
+        if(!Trigger.isDelete)
+        {
+        	if(trigger.isbefore)
+            {
+                TakeHelp.setLead(l);
+            }
+            else
+            {
+                if(trigger.isinsert)
+                {
+                  	TakeHelp.createLinks(l);
+                                  
+                }
+                else
+                {
+                    takeHelp.ifUpdate(l,o);
+                }
+            }
+        }
+        else{
+          if(l.Status!='Closed - Converted')
+       		{
+        		l.addError('Not possible to delete');          
+      		}  
+    	}
+    }
+
+    TakeHelp.insertAll();
+}
